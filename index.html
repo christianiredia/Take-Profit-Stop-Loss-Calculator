@@ -2,259 +2,506 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Options Profit Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- MOBILE APP CAPABILITIES -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
 
+    <title>Sniper Scalp Tool</title>
     <style>
-        /* Simple dark theme and font */
+        :root {
+            --bg-color: #000000;
+            --card-bg: #121212;
+            --active-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #666666;
+            --green: #00e676;
+            --green-dim: rgba(0, 230, 118, 0.1);
+            --yellow: #ffea00;
+            --yellow-dim: rgba(255, 234, 0, 0.1);
+            --red: #ff3d00;
+            --red-dim: rgba(255, 61, 0, 0.15);
+            --blue: #2979ff;
+            --blue-dim: rgba(41, 121, 255, 0.1);
+            --neutral-border: #333;
+        }
+
         body {
-            background-color: #111827; /* bg-gray-900 */
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom styles for number input arrows to keep UI clean */
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overscroll-behavior: none;
+            /* Safe area for iPhone notch/home bar */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
-        input[type=number] {
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        /* INACTIVE STATE (Safety Lock) */
+        .container.inactive > *:not(.input-wrapper) {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        /* 1. INPUT SECTION */
+        .input-wrapper { position: relative; margin-bottom: 5px; }
+        .input-label {
+            position: absolute; top: 10px; left: 15px;
+            font-size: 0.7rem; color: var(--text-muted);
+            letter-spacing: 1px; font-weight: 700;
+            z-index: 5;
+        }
+
+        /* RESET BUTTON */
+        .clear-btn {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: #222;
+            border: 1px solid #444;
+            color: #888;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 6px 12px; /* Larger touch target */
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            transition: all 0.2s;
+        }
+        .clear-btn:active { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+
+        input[type="number"].main-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 2px solid var(--neutral-border);
+            border-radius: 12px;
+            color: white;
+            font-size: 3.5rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 30px 10px 10px 10px;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
             -moz-appearance: textfield;
+            /* Fix iOS inner shadow */
+            -webkit-appearance: none; 
+            border-radius: 12px;
         }
-        /* Custom styling for the range slider thumb */
-        input[type=range]::-webkit-slider-thumb {
+        input.main-input:focus { border-color: var(--blue); background: var(--active-bg); }
+        
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* 2. SNIPER ZONE (Fixed Trims) */
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+        .box {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px 5px;
+            text-align: center;
+            border-top: 3px solid var(--neutral-border);
+            position: relative;
+            transition: transform 0.1s;
+            /* Disable selection */
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+        
+        /* Pivot Box Interactive Styles */
+        #pivotBox {
+            cursor: pointer;
+        }
+        #pivotBox:active {
+            transform: scale(0.96); /* Nice haptic feel */
+        }
+
+        .box-label { 
+            font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; 
+        }
+        .box-value { font-size: 1.6rem; font-weight: 700; color: #fff; min-height: 1.9rem; display: flex; align-items: center; justify-content: center; }
+        .box-instruction { font-size: 0.65rem; margin-top: 6px; padding: 2px 6px; border-radius: 4px; display: inline-block; font-weight: 600; }
+
+        /* Colors */
+        .trim-green { border-top-color: var(--green); }
+        .trim-green .box-value { color: var(--green); }
+        .trim-green .box-instruction { background: var(--green-dim); color: var(--green); }
+
+        .trim-yellow { border-top-color: var(--yellow); }
+        .trim-yellow .box-value { color: var(--yellow); }
+        .trim-yellow .box-instruction { background: var(--yellow-dim); color: var(--yellow); }
+
+        /* 3. CUSTOM CALC ROW */
+        .custom-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .custom-row {
+            display: flex;
+            align-items: center;
+            background: #161616;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px 15px; /* Taller for mobile touch */
+        }
+
+        .custom-label {
+            font-size: 0.7rem;
+            color: #888;
+            font-weight: 700;
+            margin-right: 10px;
+            white-space: nowrap;
+            width: 70px;
+        }
+
+        .custom-input-group {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: 60px;
+        }
+
+        input.custom-input {
+            width: 100%;
+            background: transparent;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 1.1rem; /* Larger font ensures no zoom on iOS */
+            font-weight: 700;
+            text-align: center;
+            padding: 6px;
+            outline: none;
+            -moz-appearance: textfield;
             -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #f9fafb; /* gray-50 */
-            border-radius: 50%;
-            cursor: pointer;
-            margin-top: -6px; /* Center thumb on the track */
         }
-        input[type=range]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #f9fafb; /* gray-50 */
-            border-radius: 50%;
-            cursor: pointer;
+        input.custom-input:focus { border-color: var(--blue); background: #000; }
+
+        .custom-symbol {
+            font-size: 0.8rem;
+            color: #666;
+            margin-left: 4px;
         }
+
+        .custom-arrow {
+            color: #444;
+            margin: 0 15px;
+            font-size: 0.9rem;
+        }
+
+        .custom-result {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ccc;
+            margin-left: auto;
+        }
+
+
+        /* 4. MODE TOGGLE */
+        .toggle-container {
+            display: flex; align-items: center; justify-content: center;
+            margin: 5px 0; background: #1a1a1a; padding: 12px; /* Taller touch target */
+            border-radius: 20px; cursor: pointer; border: 1px solid var(--neutral-border);
+            transition: transform 0.1s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .toggle-container:active { transform: scale(0.98); }
+
+        /* 5. MANAGER ZONE */
+        .grid-split { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 5px; }
+
+        .stop-card {
+            background: var(--red-dim); border: 2px solid var(--red);
+            border-radius: 10px; padding: 15px; text-align: center; 
+        }
+
+        .stop-label { font-size: 0.75rem; color: var(--red); font-weight: 700; }
+        .stop-value { font-size: 2rem; font-weight: 800; color: #fff; margin: 5px 0; min-height: 2.4rem; display: flex; align-items: center; justify-content: center; }
+
+        /* STRATEGY CARD */
+        .strategy-card {
+            background: var(--card-bg); border: 2px solid var(--neutral-border);
+            border-radius: 10px; padding: 15px;
+            display: flex; flex-direction: column; justify-content: center;
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+        .strat-list { font-size: 0.85rem; color: #ccc; line-height: 1.5; margin: 0; padding-left: 0; list-style: none; }
+        .strat-list li::before { content: "›"; color: var(--blue); margin-right: 6px; font-weight: bold; }
+
+        /* RUNNER MODE STATES */
+        body.runner-mode .stop-card { opacity: 0.2; }
+        body.runner-mode .strategy-card { opacity: 1; border-color: var(--blue); background: var(--blue-dim); }
+        body.runner-mode .trim-yellow { background: var(--yellow-dim); }
+        
+        /* Toast */
+        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 10px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; border: 1px solid #555; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
-<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <main class="w-full max-w-md mx-auto p-6 bg-gray-800 rounded-xl shadow-2xl space-y-4">
+<div id="mainContainer" class="container inactive">
 
-        <!-- Title -->
-        <h1 class="text-2xl font-bold text-center text-white">Options Profit Calculator</h1>
+    <!-- INPUT -->
+    <div class="input-wrapper">
+        <span class="input-label">ENTRY PRICE</span>
+        <button id="resetBtn" class="clear-btn" onclick="resetTool()">RESET</button>
+        <input type="number" id="entry" class="main-input" placeholder="0.00" step="0.01" inputmode="decimal">
+    </div>
 
-        <!-- Section 1: Core Inputs -->
-        <section class="space-y-4">
-            <div>
-                <label for="contract-price" class="block text-sm font-medium text-gray-400 mb-1">Contract Price ($)</label>
-                <input type="number" id="contract-price" inputmode="decimal" placeholder="e.g., 2.50" step="0.01" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+    <!-- TARGETS (FIXED PRESETS) -->
+    <div class="grid-3">
+        <!-- TRIM 1 (Static) -->
+        <div class="box trim-green">
+            <div class="box-label">TRIM 1 (15%)</div>
+            <div class="box-value" id="t1">---</div>
+            <div class="box-instruction">SELL 50%</div>
+        </div>
+
+        <!-- TRIM 2 (Static) -->
+        <div class="box trim-green">
+            <div class="box-label">TRIM 2 (20%)</div>
+            <div class="box-value" id="t2">---</div>
+            <div class="box-instruction">SELL 25%</div>
+        </div>
+
+        <!-- PIVOT (Interactive) -->
+        <div class="box trim-yellow" id="pivotBox" onclick="handleBoxClick('t3')">
+            <div class="box-label">PIVOT (30%)</div>
+            <div class="box-value" id="t3">---</div>
+            <div class="box-instruction">ACTIVATE RUNNER</div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CALC SECTION -->
+    <div class="custom-wrapper">
+        <!-- CUSTOM TARGET -->
+        <div class="custom-row">
+            <div class="custom-label" style="color: #00e676;">CUST TGT</div>
+            <div class="custom-input-group">
+                <input type="number" id="customPct" class="custom-input" placeholder="0" inputmode="decimal">
             </div>
-            <div>
-                <label for="num-contracts" class="block text-sm font-medium text-gray-400 mb-1">Number of Contracts</label>
-                <input type="number" id="num-contracts" inputmode="decimal" value="2" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-            </div>
-        </section>
-
-        <!-- Horizontal Divider -->
-        <hr class="border-gray-700">
-
-        <!-- Section 2: Interactive Calculators -->
-        <section class="space-y-4">
-            <!-- Take Profit Card -->
-            <div class="p-4 bg-gray-900/50 border border-green-500/30 rounded-lg">
-                <label class="text-lg font-semibold text-green-400">Take Profit</label>
-                <div class="mt-2 text-4xl font-bold text-green-400" id="tp-target-price">$0.00</div>
-                <div class="mt-4 space-y-3">
-                    <input type="range" id="tp-slider" min="1" max="500" value="30" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-                    <div class="flex items-center justify-between gap-2">
-                        <input type="number" id="tp-percentage" inputmode="decimal" value="30" class="w-24 p-2 text-center bg-gray-700 border border-gray-600 rounded-md">
-                        <div class="flex gap-1">
-                            <button data-value="25" class="tp-preset-btn px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/40 rounded-md transition">25%</button>
-                            <button data-value="50" class="tp-preset-btn px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/40 rounded-md transition">50%</button>
-                            <button data-value="100" class="tp-preset-btn px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/40 rounded-md transition">100%</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stop Loss Card -->
-            <div class="p-4 bg-gray-900/50 border border-red-500/30 rounded-lg">
-                <label class="text-lg font-semibold text-red-400">Stop Loss</label>
-                <div class="mt-2 text-4xl font-bold text-red-400" id="sl-target-price">$0.00</div>
-                <div class="mt-4 space-y-3">
-                    <input type="range" id="sl-slider" min="1" max="100" value="15" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-                    <div class="flex items-center justify-between gap-2">
-                        <input type="number" id="sl-percentage" inputmode="decimal" value="15" class="w-24 p-2 text-center bg-gray-700 border border-gray-600 rounded-md">
-                        <div class="flex gap-1">
-                            <button data-value="10" class="sl-preset-btn px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/40 rounded-md transition">10%</button>
-                            <button data-value="15" class="sl-preset-btn px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/40 rounded-md transition">15%</button>
-                            <button data-value="25" class="sl-preset-btn px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/40 rounded-md transition">25%</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+            <div class="custom-symbol">%</div>
+            <div class="custom-arrow">➜</div>
+            <div class="custom-result" id="customResult">---</div>
+        </div>
         
-        <!-- Section 3: The Analysis -->
-        <section class="space-y-2 pt-2">
-            <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
-                <span class="font-medium text-gray-400">Potential P/L:</span>
-                <div>
-                    <span id="total-profit" class="font-semibold text-green-400">+$0.00</span> /
-                    <span id="total-loss" class="font-semibold text-red-400">-$0.00</span>
-                </div>
+        <!-- CUSTOM STOP -->
+        <div class="custom-row">
+            <div class="custom-label" style="color: #ff3d00;">CUST STOP</div>
+            <div class="custom-input-group">
+                <input type="number" id="customStopPct" class="custom-input" placeholder="0" inputmode="decimal">
             </div>
-            <div class="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
-                <span class="font-medium text-gray-400">Risk/Reward Ratio:</span>
-                <div class="flex items-center gap-2">
-                    <span id="rr-ratio" class="font-bold text-white">2:1</span>
-                    <span id="rr-quality" class="px-2 py-0.5 text-xs font-semibold rounded-full"></span>
-                </div>
+            <div class="custom-symbol">%</div>
+            <div class="custom-arrow">➜</div>
+            <div class="custom-result" id="customStopResult">---</div>
+        </div>
+    </div>
+
+    <!-- MODE TOGGLE -->
+    <div class="toggle-container" onclick="toggleRunnerMode()">
+        <span style="font-size:0.8rem; color:#888; margin-right:10px;">MODE:</span>
+        <span id="modeText" style="color: var(--red); font-weight: bold; font-size: 0.8rem;">DEFENSE (PRE-PIVOT)</span>
+    </div>
+
+    <!-- MANAGER ZONE -->
+    <div class="grid-split">
+        
+        <!-- STOP LOSS (FIXED) -->
+        <div class="stop-card">
+            <div class="stop-label">SCRATCH (-10%)</div>
+            <div class="stop-value" id="sl">---</div>
+        </div>
+
+        <!-- STRATEGY -->
+        <div class="strategy-card">
+            <div class="strat-label" style="display:flex; justify-content:space-between;">
+                RUNNER RULES
             </div>
-        </section>
+            <ul class="strat-list">
+                <li>Replace Hard Stop</li>
+                <li>Trail 5m Low</li>
+                <li>Exit on break</li>
+            </ul>
+        </div>
+    </div>
 
-        <!-- Section 4: Utilities -->
-        <section>
-            <button id="reset-btn" class="w-full py-2.5 text-sm font-semibold text-white bg-gray-600/50 hover:bg-gray-600 rounded-lg transition">Reset</button>
-        </section>
-    </main>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- 1. SELECT ALL THE ELEMENTS ---
-            // Core Inputs
-            const contractPriceInput = document.getElementById('contract-price');
-            const numContractsInput = document.getElementById('num-contracts');
+</div>
 
-            // Take Profit Elements
-            const tpTargetPriceDisplay = document.getElementById('tp-target-price');
-            const tpSlider = document.getElementById('tp-slider');
-            const tpPercentageInput = document.getElementById('tp-percentage');
-            const tpPresetBtns = document.querySelectorAll('.tp-preset-btn');
+<!-- TOAST -->
+<div id="toast">Value Copied!</div>
 
-            // Stop Loss Elements
-            const slTargetPriceDisplay = document.getElementById('sl-target-price');
-            const slSlider = document.getElementById('sl-slider');
-            const slPercentageInput = document.getElementById('sl-percentage');
-            const slPresetBtns = document.querySelectorAll('.sl-preset-btn');
+<script>
+    let runnerMode = false;
 
-            // Analysis Display
-            const totalProfitDisplay = document.getElementById('total-profit');
-            const totalLossDisplay = document.getElementById('total-loss');
-            const rrRatioDisplay = document.getElementById('rr-ratio');
-            const rrQualityDisplay = document.getElementById('rr-quality');
+    // Elements
+    const container = document.getElementById('mainContainer');
+    const entryInput = document.getElementById('entry');
+    const customInput = document.getElementById('customPct');
+    const customResult = document.getElementById('customResult');
+    const customStopInput = document.getElementById('customStopPct');
+    const customStopResult = document.getElementById('customStopResult');
+    const modeText = document.getElementById('modeText');
+    const resetBtn = document.getElementById('resetBtn');
 
-            // Utility
-            const resetBtn = document.getElementById('reset-btn');
+    // Constants
+    const P1 = 15;
+    const P2 = 20;
+    const P3 = 30;
+    const SL_PCT = 10;
+
+    // Load defaults
+    window.onload = () => {
+        entryInput.focus();
+        calculate();
+    };
+
+    // Auto-Select Input
+    entryInput.addEventListener('click', function() { this.select(); });
+    customInput.addEventListener('click', function() { this.select(); });
+    customStopInput.addEventListener('click', function() { this.select(); });
+
+    // Bind inputs
+    entryInput.addEventListener('input', calculate);
+    customInput.addEventListener('input', calculate);
+    customStopInput.addEventListener('input', calculate);
+
+    // RESET FUNCTION
+    window.resetTool = function() {
+        entryInput.value = "";
+        customInput.value = "";
+        customStopInput.value = "";
+        if(runnerMode) toggleRunnerMode(); // Reset mode
+        calculate();
+        entryInput.focus();
+    }
+
+    // MAIN CALCULATION
+    function calculate() {
+        const price = parseFloat(entryInput.value);
+        
+        // Clear & Disable logic if no price
+        if(!price) {
+            ['t1','t2','t3','sl'].forEach(id => document.getElementById(id).innerText = '---');
+            customResult.innerText = '---';
+            customStopResult.innerText = '---';
+            resetBtn.style.display = 'none';
             
-            // --- 2. THE MAIN CALCULATION FUNCTION ---
-            function calculate() {
-                // Get values and convert to numbers, providing defaults if empty
-                const contractPrice = parseFloat(contractPriceInput.value) || 0;
-                const numContracts = parseInt(numContractsInput.value) || 0;
-                const tpPercentage = parseFloat(tpPercentageInput.value) || 0;
-                const slPercentage = parseFloat(slPercentageInput.value) || 0;
+            // Activate Safety Lock (CSS handles pointer-events:none)
+            container.classList.add('inactive');
+            return;
+        }
 
-                // --- Calculations ---
-                // Target Prices
-                const tpTargetPrice = contractPrice * (1 + tpPercentage / 100);
-                const slTargetPrice = contractPrice * (1 - slPercentage / 100);
+        // Enable Tool
+        container.classList.remove('inactive');
+        resetBtn.style.display = 'block';
 
-                // Total P/L (per contract price * 100 shares/contract * num contracts * percentage)
-                const totalProfit = (contractPrice * 100 * numContracts) * (tpPercentage / 100);
-                const totalLoss = (contractPrice * 100 * numContracts) * (slPercentage / 100);
+        // 1. Calculate Presets
+        const v1 = price * (1 + (P1 / 100));
+        const v2 = price * (1 + (P2 / 100));
+        const v3 = price * (1 + (P3 / 100));
+        const vSL = price * (1 - (SL_PCT / 100));
 
-                // Risk/Reward Ratio
-                let rrRatio = slPercentage > 0 ? tpPercentage / slPercentage : 0;
+        document.getElementById('t1').innerText = v1.toFixed(2);
+        document.getElementById('t2').innerText = v2.toFixed(2);
+        document.getElementById('t3').innerText = v3.toFixed(2);
+        document.getElementById('sl').innerText = vSL.toFixed(2);
+        
+        // 2. Calculate Custom Target (Add %)
+        const custVal = parseFloat(customInput.value);
+        if (!isNaN(custVal)) {
+            const vCustom = price * (1 + (custVal / 100));
+            customResult.innerText = '$' + vCustom.toFixed(2);
+        } else {
+            customResult.innerText = '---';
+        }
 
-                // --- 3. UPDATE THE UI ---
-                // Format and display target prices
-                tpTargetPriceDisplay.textContent = `$${tpTargetPrice.toFixed(2)}`;
-                slTargetPriceDisplay.textContent = `$${slTargetPrice.toFixed(2)}`;
+        // 3. Calculate Custom Stop (Subtract %)
+        const custStopVal = parseFloat(customStopInput.value);
+        if (!isNaN(custStopVal)) {
+            const vCustomStop = price * (1 - (custStopVal / 100));
+            customStopResult.innerText = '$' + vCustomStop.toFixed(2);
+        } else {
+            customStopResult.innerText = '---';
+        }
 
-                // Format and display total P/L
-                totalProfitDisplay.textContent = `+$${totalProfit.toFixed(2)}`;
-                totalLossDisplay.textContent = `-$${totalLoss.toFixed(2)}`;
+        // Update Pivot Label
+        if(!runnerMode) modeText.innerText = `DEFENSE (PRE-${P3}%)`;
+    }
 
-                // Format and display R/R ratio (UPDATED LOGIC)
-                const formattedRatio = (rrRatio % 1 === 0) ? rrRatio.toFixed(0) : rrRatio.toFixed(2);
-                rrRatioDisplay.textContent = `${formattedRatio}:1`;
+    // BOX CLICK HANDLER
+    window.handleBoxClick = function(id) {
+        // Guard clause (Safety Lock)
+        if(container.classList.contains('inactive')) return;
 
-                // Update R/R Quality Badge
-                rrQualityDisplay.classList.remove('bg-green-500', 'text-green-900', 'bg-blue-500', 'text-blue-900', 'bg-red-500', 'text-red-900');
-                if (rrRatio >= 2) {
-                    rrQualityDisplay.textContent = 'Excellent';
-                    rrQualityDisplay.classList.add('bg-green-500', 'text-green-900');
-                } else if (rrRatio >= 1) {
-                    rrQualityDisplay.textContent = 'Decent';
-                    rrQualityDisplay.classList.add('bg-blue-500', 'text-blue-900');
-                } else if (rrRatio > 0) {
-                    rrQualityDisplay.textContent = 'Poor';
-                    rrQualityDisplay.classList.add('bg-red-500', 'text-red-900');
-                } else {
-                    rrQualityDisplay.textContent = '';
-                }
-            }
+        // Special case for Pivot Box (Toggle Runner Mode)
+        if (id === 't3') {
+            toggleRunnerMode();
+            return;
+        }
+        
+        // Copy functionality removed for T1/T2 as per request
+        // Only t3 uses this function now, and it returns early.
+        const val = document.getElementById(id).innerText;
+        if(val === "---") return;
+        copyToClipboard(val);
+    }
 
-            // --- 4. SET UP EVENT LISTENERS ---
-            // Listen for any input changes
-            const inputs = [contractPriceInput, numContractsInput, tpPercentageInput, slPercentageInput, tpSlider, slSlider];
-            inputs.forEach(input => input.addEventListener('input', calculate));
+    window.toggleRunnerMode = function() {
+        // Guard clause
+        if(container.classList.contains('inactive')) return;
 
-            // Sync slider and percentage input for Take Profit
-            tpSlider.addEventListener('input', () => tpPercentageInput.value = tpSlider.value);
-            tpPercentageInput.addEventListener('input', () => tpSlider.value = tpSlider.value);
+        runnerMode = !runnerMode;
+        const pivotBox = document.getElementById('pivotBox');
 
-            // Sync slider and percentage input for Stop Loss
-            slSlider.addEventListener('input', () => slPercentageInput.value = slSlider.value);
-            slPercentageInput.addEventListener('input', () => slSlider.value = slSlider.value);
+        if(runnerMode) {
+            document.body.classList.add('runner-mode');
+            modeText.innerText = "RUNNER MODE (ACTIVE)";
+            modeText.style.color = "var(--blue)";
+            pivotBox.style.background = "var(--yellow-dim)";
+        } else {
+            document.body.classList.remove('runner-mode');
+            modeText.innerText = `DEFENSE (PRE-${P3}%)`;
+            modeText.style.color = "var(--red)";
+            pivotBox.style.background = ""; // Reset
+        }
+    }
 
-            // Listen for clicks on preset buttons
-            tpPresetBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const value = btn.dataset.value;
-                    tpPercentageInput.value = value;
-                    tpSlider.value = value;
-                    calculate();
-                });
-            });
-
-            slPresetBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const value = btn.dataset.value;
-                    slPercentageInput.value = value;
-                    slSlider.value = value;
-                    calculate();
-                });
-            });
-
-            // Listen for click on Reset button
-            resetBtn.addEventListener('click', () => {
-                contractPriceInput.value = '';
-                numContractsInput.value = '2';
-                tpPercentageInput.value = '30';
-                tpSlider.value = '30';
-                slPercentageInput.value = '15';
-                slSlider.value = '15';
-                calculate();
-            });
-
-            // --- 5. INITIAL CALCULATION ---
-            // Run once on page load to set initial state
-            calculate();
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
         });
-    </script>
+    }
+</script>
+
 </body>
 </html>
